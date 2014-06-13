@@ -1,0 +1,59 @@
+#!/bin/sh
+
+
+#set -u #Variable checks
+#set -x #Trace
+
+
+PRINTF=/usr/bin/printf
+PS=/usr/bin/ps
+
+KILL=/usr/bin/kill
+currentUser=`/usr/ucb/whoami`
+#####################################################################
+userInput=
+exitStatus=
+
+
+#####################################################################
+main()
+{
+
+$PS "-u $currentUser" | awk '{printf "%-8s%-10s%-20s\n", $1,$3,$4}'
+
+$PRINTF "Enter 0 to Exit, or process number to kill that process\n"
+
+read userInput
+
+
+	if [ "$userInput" -eq 0 ]; then
+	$PRINTF "Exiting\n"
+	
+	exit 0
+	else
+echo "THe process id entered is $userInput"
+	$KILL -s KILL "$userInput" 2>/dev/null
+	exitStatus=$?
+	fi
+
+
+
+	if [ "$exitStatus" -gt 0 ]; then
+	$PRINTF "Unable to perform Operation\n"
+	$PRINTF "Exiting\n"
+	exit 0
+	fi
+
+} #end main
+#####################################################################
+
+#####################################################################
+#---Main Method
+
+main
+
+
+
+
+
+

@@ -1,0 +1,147 @@
+#!/bin/sh
+
+echo "Inside EXPERT System\n"
+
+#DEBUGGING
+#set -u #Variable checks
+#set -x #Trace
+
+
+PRINTF=/usr/bin/printf
+FINGER=/usr/bin/finger
+ENV=/usr/bin/env
+DATE=/usr/bin/date
+UPTIME=/usr/bin/uptime
+QUOTA=/usr/ucb/quota
+SLEEP=/usr/bin/sleep
+
+userInput=
+userChoice=
+#####################################################################
+
+#####################################################################
+menu ()
+{
+$PRINTF "1 -- Display the current date, Time and System Uptime\n"
+$PRINTF "2 -- Current disk usage of the user\n"
+$PRINTF "3 -- Display Enviromental Variables\n"
+$PRINTF "4 -- Display Current Users\n"
+$PRINTF "5 -- Quit -- Exit the program"
+$PRINTF "Please enter an option: "
+
+} #end menu
+#####################################################################
+
+#####################################################################
+#reads user input, pass input to checking Functions
+readInput ()
+{
+	read userInput
+	checkInput $userInput
+	userChoice=$cleanInput
+}
+#####################################################################
+
+#####################################################################
+#checks if userinput not blank
+checkInput ()
+{
+argumentCount=$#
+toCheck=
+
+if [ $argumentCount -eq 0 ]; then
+	$PRINTF "Please Try Again\n"
+	menu
+	read toCheck
+
+		while [ -z "$toCheck" ] 
+		do
+		$PRINTF "Please Try Again\n"
+		menu
+		read toCheck
+		done
+		cleanInput=$toCheck
+	else
+	cleanInput=$1
+fi
+} #end checkInput
+#####################################################################
+
+#####################################################################
+#checks if the user choice matches 1,2,3, reloop if !
+checkChoice ()
+{
+case $userChoice in
+
+	1) systemTime ;;
+
+	2) diskUsage ;;
+
+	3) enviromentVars ;;
+
+	4) currentUsers ;;
+	
+	5) exit ;;
+
+	*)	$PRINTF "Invalid Choice, Try Again\n"
+		$PRINTF "===================\n\n"
+		menu
+		readInput
+		
+		checkChoice;;	
+esac
+} #end checkChoice
+#####################################################################
+
+diskUsage()
+{
+$PRINTF "************************************\n"
+$QUOTA -v
+$PRINTF "************************************\n"
+} #end diskUsage
+#####################################################################
+
+#####################################################################
+systemTime ()
+{
+$PRINTF "************************************\n"
+dateFormated=`$DATE | awk '{ printf "%s %s %s %s", $1, $3, $2, $6}'`
+$PRINTF "Current Date:  $dateFormated\n"
+
+timeFormated=`$DATE  | awk '{ printf " %s %s",  $4, $5}'`
+
+$PRINTF "Current Time: $timeFormated\n"
+
+uptimeFormated=`$UPTIME | awk '{printf "%s %s" , $3,$4}'`
+
+$PRINTF "Server Uptime: $uptimeFormated\n"
+$PRINTF "************************************\n"
+
+} #end systemTime
+#####################################################################
+
+
+
+#####################################################################
+currentUsers ()
+{
+$FINGER  | awk '{printf "%-8s%20s\n", $1,$2}'
+
+}
+#####################################################################
+
+#####################################################################
+enviromentVars ()
+{
+echo 'environmental Variables'
+$SLEEP 2
+$ENV
+} #end enviromentVars
+#####################################################################
+
+#####################################################################
+#---Main Method
+
+menu
+readInput
+checkChoice

@@ -1,0 +1,239 @@
+#!/bin/sh
+
+
+#Name: Joshua Yu
+#Student Number: 323 5184
+#Last Modfied: 21/05/2012
+
+#This script is the controller that connects the other scripts together
+#centrally via menu
+#This scripts checks the locations of the other scripts and if permissions
+#are correct
+#Assume all scripts are in the same directory as the helpme
+#To use expert features, use lower case words for arguments
+#Assume users follow unix philosy and they know what they are doing, hence
+#files will be overwritten if a same filename exisits EXCEPT for Copy 
+#function
+#####################################################################
+
+
+#DEBUGGING
+#set -u #Variable checks
+#set -x #Trace
+
+DIRNAME=/usr/bin/dirname
+PRINTF=/usr/bin/printf
+PWD=/usr/bin/pwd
+
+argumentCount=$# #not including the command at $0
+
+directory=
+cleanInput=
+userInput=
+userChoice=
+#####################################################################
+
+
+#if user enters an argument at startup, store the argument
+if [ "$argumentCount" -gt 0 ]; then
+argument=$1
+fi
+#####################################################################
+
+
+
+#####################################################################
+#Basic Mode text menu 
+noviceMenu () {
+	$PRINTF "*Current Mode: Basic/Novice*\n\n" 
+	
+	$PRINTF '1. List Current Directory\n'
+	$PRINTF '2. Rename a file\n'
+	$PRINTF '3. Remove a file\n'
+	$PRINTF '4. Copy a file\n'
+	$PRINTF '5. Exit\n'
+	$PRINTF 'Please Select an Option: \n'
+
+} #end Novice Function
+
+#reads user input, pass input to checking Functions
+readInput ()
+{
+	read "userInput"
+	checkInput "$userInput"
+	userChoice=$cleanInput
+}
+
+#checks if userinput not blank
+checkInput ()
+{
+	argumentCount=$#
+	toCheck=
+
+	if [ $argumentCount -eq 0 ]; then
+		$PRINTF "Please Try Again\n"
+		noviceMenu
+		read toCheck
+
+		while [ -z "$toCheck" ] 
+		do
+		$PRINTF "Please Try Again\n"
+		noviceMenu
+		read "toCheck"
+		done
+		cleanInput=$toCheck
+	else
+	cleanInput=$1
+fi
+} #end checkInput
+#####################################################################
+
+#####################################################################
+#checks if the user choice matches 1,2,3, reloop if !
+checkChoice ()
+{
+	case $userChoice in
+
+	1)
+	"${path}NMList";;
+	2)
+	"${path}NMRename";;
+	3)
+	"${path}NMRemove";;
+	4)
+	"${path}NMCopy";;
+	5)$PRINTF 'Utility Exiting...\n'
+		exit 0;;
+	*)$PRINTF 'You selected an incorrect slection, Try again\n'
+		noviceMenu
+		readInput
+		checkChoice;;
+	esac
+
+} #end checkChoice
+#####################################################################
+
+#####################################################################
+#function to determine which menu to display
+menuChooser () {
+
+	if [ "$argumentCount" -eq 0 ] ; then
+
+		noviceMenu #call Novice menu
+		readInput
+		checkChoice
+
+	elif [ "$argumentCount" -eq 1 ] ; then	
+		Expert
+	fi
+
+} #end menuChooser function
+#####################################################################
+
+#####################################################################
+#Expert Mode function
+#checks if argument matches any case and
+#calls correct external script
+Expert () {
+
+	case $argument in
+
+	process)
+		"${path}EXProcess";;
+	text)
+		"${path}EXText";;
+	system)
+		"${path}EXSystem";;
+
+
+	*)$PRINTF "In-valid argument, Exiting\n"
+		exit 0;;
+	esac
+	
+
+} #end Expert Mode Function
+
+#####################################################################
+
+
+#####################################################################
+#checks if all required files have correct permission (x and r)
+coreLoad ()
+{
+path=`$DIRNAME "$0"`
+
+#cases in current directory
+if [ "$path" = '.' ]; then
+	path='./'
+else
+	path="${path}/"
+fi
+	$PRINTF "==========\n"
+	$PRINTF "File Checker\n\n"
+	$PRINTF "Script Launched from: $path\n"
+	$PRINTF "Current Working Directory: `$PWD`\n\n"
+	$PRINTF "%s%20s\n\n" "File:" "Status"
+
+	$PRINTF "%5s\n" "=Basic Mode:="
+	if [ -x "${path}NMList" -a -r "${path}NMList" ]; then
+		$PRINTF "%-20s%s\n" "NMList" "Ok"
+	else
+		$PRINTF "%-20s%s\n" "NMList" "NOT OK"
+	fi
+
+	if [ -x "${path}NMRename" -a -r "${path}NMRename" ]; then
+		$PRINTF "%-20s%s\n" "NMRename" "Ok"
+	else
+		$PRINTF "%-20s%s\n" "NMRename" "NOT OK"
+	fi
+
+	if [ -x "${path}NMRemove" -a -r "${path}NMRemove" ]; then
+		$PRINTF "%-20s%s\n" "NMRemove " "Ok"
+	else
+		$PRINTF "%-20s%s\n" "NMRemove" "NOT OK"
+	fi
+
+	if [ -x "${path}NMCopy" -a -r "${path}NMCopy" ]; then
+		$PRINTF "%-20s%s\n\n" "NMCopy " "Ok"
+	else
+		$PRINTF "%-20s%s\n\n" "NMCopy" "NOT OK"
+	fi
+
+		$PRINTF "%5s\n" "=Expert Mode:="
+	if [ -x "${path}EXProcess" -a -r "${path}EXProcess" ]; then
+		$PRINTF "%-20s%s\n" "EXProcess" "Ok"
+	else
+		$PRINTF "%-20s%s\n" "EXProcess" "NOT OK"
+	fi
+
+	if [ -x "${path}EXText" -a -r "${path}EXText" ]; then
+		$PRINTF "%-20s%s\n" "EXText" "Ok"
+	else
+		$PRINTF "%-20s%s\n" "EXText" "NOT OK"
+	fi
+
+	if [ -x "${path}EXSystem" -a -r "${path}EXSystem" ]; then
+		$PRINTF "%-20s%s\n" "EXSystem" "Ok"
+	else
+		$PRINTF "%-20s%s\n" "EXSystem" "NOT OK"
+	fi
+
+	$PRINTF "==========\n"
+	$PRINTF "\n"
+
+} #end coreLoad
+#####################################################################
+
+
+#--------- main  method
+
+coreLoad
+#####################################################################
+
+#Checks if too many argument
+if [ "$argumentCount" -gt 1 ] ; then
+	$PRINTF "You have entered too many arguments, Utility will exit\n"
+	exit 0
+else
+	menuChooser
+fi

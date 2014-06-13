@@ -1,0 +1,137 @@
+#!/bin/sh
+
+#Author: Joshua Yu
+#Student Number: 323 5184
+#Last Modified: 21/05/2012
+
+#This script is to remove files using inbuilt rm.
+#Checks if the file exists, if directory has w and x permissions
+
+
+PRINTF=/usr/bin/printf
+RM=/usr/bin/rm
+DIRNAME=/usr/bin/dirname
+
+uncheckFileName=
+exitStatus=
+
+$PRINTF '====Currently In NMRemove Script====\n'
+#####################################################################
+#DEBUGGING
+#set -u #Variable checks
+#set -x #Trace
+
+#####################################################################
+#####################################################################
+main ()
+{
+	$PRINTF "Please input file to be removed: \n"
+	read fileName
+	checkInput "$fileName"
+	uncheckFileName=$cleanInput
+
+	fileCheck "$uncheckFileName"
+
+	removeFile
+
+	errorCheck
+} #end main
+#####################################################################
+
+#####################################################################
+
+#checks if  directory has W and X permissions
+#checks if the filename exisits and is a regular file
+fileCheck ()
+{
+passedArgument=$1
+
+#strips only the directory and minus the '/' at end
+directory=`$DIRNAME "$passedArgument"`
+
+if [ ! -w "$directory" ]; then
+	$PRINTF "Error: Directory Permission (Require Write Permission)\n"
+	$PRINTF "Exiting Program\n"
+	exit 10
+
+	elif [ ! -x "$directory" ]; then
+		$PRINTF "ERROR: Source Directory Permission \
+(Require x - Execute Permission)\n"
+		$PRINTF "Exiting Program\n"
+		exit 10
+
+	elif [ ! -x "$directory" ]; then
+		$PRINTF "ERROR: Source Directory Permission \
+(Require w - Execute Permission)\n"
+		$PRINTF "Exiting Program\n"
+		exit 10
+	elif [ ! -f "$fileName" ]; then
+
+		$PRINTF "ERROR: Not a Regular File and Doesnt exist \n"
+		$PRINTF "Exiting Program\n"
+		exit 10
+
+fi
+#if it gets past here, means it passes permission checks
+} #end fileCheck
+#####################################################################
+
+#####################################################################
+#function to check if userInput is not blank (pass in input)
+#if user input nothing initially, 
+#if will get trigger and reloop until some input is entered
+
+checkInput ()
+{
+	cleanInput=
+	argumentCount=$#
+	toCheck=
+
+if [ "$argumentCount" -eq 0 ]; then
+	$PRINTF "Enter a file name:\n"
+	read toCheck
+
+	while [ -z "$toCheck" ] 
+	do
+		$PRINTF "Enter a file name\n"
+		read toCheck
+	done
+
+	cleanInput=$toCheck
+else
+	cleanInput=$1
+fi
+	
+} #end checkInput
+#####################################################################
+
+
+#####################################################################
+removeFile ()
+{
+	$RM "$fileName" 2> /dev/null
+	exitStatus=$?
+	
+} #end removeFile
+#####################################################################
+
+#####################################################################
+#checks if the RM cammand was done successfull or not
+errorCheck ()
+{
+if [ "$exitStatus" -eq 0 ]; then
+	$PRINTF "File: \" $fileName \" was removed Successfuly\n "
+fi
+
+if [ "$exitStatus" -gt 0 ]; then
+	$PRINTF "Unable to Remove File"
+	exit 10
+fi
+} #end errorCheck
+#####################################################################
+
+#####################################################################
+#---MainMethod
+
+main
+

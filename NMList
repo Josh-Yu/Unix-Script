@@ -1,0 +1,54 @@
+#!/bin/sh
+
+#Scirpt does a ls -l on the current working directory.
+#script also checks if the current working directory has permission 
+#-r and x.
+
+#Last Modified: 21/05/2012
+#Author: Joshua Yu
+
+
+
+#DEBUGGING
+#set -u #Variable checks
+#set -x #Trace
+#####################################################################
+
+PRINTF=/usr/bin/printf
+LS=/bin/ls
+PWD=/usr/bin/pwd
+
+currentDirectory=`$PWD`
+
+$PRINTF '====Currently In NMList Script====\n'
+#####################################################################
+main()
+{
+
+#check if the user has the read and execute permission for that directory
+if [ -x "$currentDirectory" ]; then
+	$PRINTF "Checking Execute Permission..OK\n"
+	
+	if [ -r "$currentDirectory" ]; then
+		$PRINTF "Checking Read Permission..OK\n"
+		$LS -l "$currentDirectory"
+	else
+		$PRINTF "Checking Read Permission..NOT OK\n"
+		$PRINTF "Folder does not have Read permission for user. Unable to use List Utility\n"
+		$PRINTF "Exiting Script\n"
+		exit 10
+
+	fi
+else
+	$PRINTF "Checking Execute Permission..NOT OK\n"
+	$PRINTF "Folder does not have Execute permission for user. Unable to use List Utility\n"
+	$PRINTF "Exiting Script\n"
+	exit 10
+fi
+
+}
+#####################################################################
+#-----Main
+
+main
+

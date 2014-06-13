@@ -1,0 +1,232 @@
+#!/bin/sh
+
+#Author: Joshua Yu
+#Student Number: 323 5184
+#Last Modified: 21/05/2012
+
+#script copys files
+#Scipt prompt user for soruce file to copy and destination too.
+#scirpt also checks if source file exists and regular and has r.
+#Checks if destination directory has w permissions too.
+
+CP=/usr/bin/cp
+PRINTF=/usr/bin/printf
+BASENAME=/usr/bin/basename
+DIRNAME=/usr/bin/dirname
+
+sourceFileName=
+uncheckDestination=
+
+#holds directory after it has gone thru permission and existance checks
+compatibleDirectory=
+
+#cleaninput holds the filtered input
+cleanInput= 
+#####################################################################
+#DEBUGGING
+#set -u #Variable checks
+#set -x #Trace
+
+
+$PRINTF '====Currently In NMCopy Script====\n'
+#####################################################################
+main ()
+{
+	$PRINTF "Please input file to be Copied: \n"
+	read sourceFileName
+	checkInput "$sourceFileName"
+	sourceFileName=$cleanInput
+
+
+fileCheck
+permissionCheck
+
+	$PRINTF "Please input new file name: \n"
+	read uncheckDestination
+	checkInput "$uncheckDestination"
+
+	uncheckDestination=$cleanInput
+
+#uncheckDestination is the destination not checked yet
+destinationCheck "$uncheckDestination"
+
+copyFile
+	
+} #end main
+#####################################################################
+
+#####################################################################
+#function to check if userInput is not blank (pass in input)
+#if user input nothing initially, 
+#if will get trigger and reloop until some input is entered
+
+checkInput ()
+{
+
+argumentCount=$#
+toCheck=
+
+if [ "$argumentCount" -eq 0 ]; then
+	$PRINTF "Please Type something\n"
+	read toCheck
+
+		while [ -z "$toCheck" ] 
+		do
+			$PRINTF "Please Type something\n"
+			read toCheck
+		done
+		cleanInput=$toCheck
+	else
+		cleanInput=$1
+fi
+	
+} #end checkInput
+#####################################################################
+
+
+#####################################################################
+#checks if the filename exisits and is a regular file
+#checks if file has read Permission
+fileCheck ()
+{
+if [ ! -f "$sourceFileName" ]; then
+	$PRINTF "ERROR: Not a Regular File and Doesnt exist \n"
+	$PRINTF "Exiting Program\n"
+	exit 10
+elif [ ! -r "$sourceFileName" ]; then
+	$PRINTF "ERROR: Source File Permission (r - Read Required)\n"
+	$PRINTF "Exiting Program\n"
+	exit 10
+fi
+} #end fileCheck
+#####################################################################
+
+#####################################################################
+#strips the file prefix out and checks if directory
+#has w permission and is a directory. If yes then
+#final destination is the real destionation
+
+#Also, modifys the final path depending whether user typed 
+#only new file or specify a path
+#
+#strips the new filename and saves it
+
+
+#COPY REQUIRES W and X permissions inorder for it to work
+destinationCheck ()
+{
+#argument should be the directory input by user
+	passedArgument=$1
+
+#strips only the directory and minus the '/' at end
+	directory=`$DIRNAME "$passedArgument"`
+
+#strips the new file name from directory and saves it
+	baseFileName=`$BASENAME "$passedArgument"`
+
+#echo 'inside destination check'
+	
+#echo "the directory value is $directory"
+#echo "the basename is $baseFileName"
+
+
+
+#if not valid directory, goes into loop if not a directory
+if [ ! -d "$directory" ]; then
+	$PRINTF "Error: Not a valid Directory\n"
+	$PRINTF "Exiting\n"
+	exit 10
+
+#passes the directory test previously, so it currently is a directory
+#to get to this part
+
+	elif [ ! -w "$directory" ]; then
+		$PRINTF "Error: Destination Permission Error (Require Write)\n"
+		$PRINTF "Exiting\n"
+		exit 10
+	elif [ ! -x "$directory" ]; then
+		$PRINTF "Error: Destination Permission Error (Require Execute)\n"
+		$PRINTF "Exiting\n"
+		exit 10
+
+#else will exec, doesnt matches any ifs, so its a legit directory
+else
+	compatibleDirectory=$directory
+
+fi
+
+###
+
+#if user specifys no path, its assumed its the current directory
+#therefore using dirname would result in '.'(current directory)
+#
+
+if [ "$compatibleDirectory" = '.' ]; then
+#final path is the directory + newfile name
+
+	compatibleDirectory='./'
+	finalPath="${compatibleDirectory}$baseFileName"
+	
+else
+
+#adds the '/' for cases where user specifies path, because dirname strips
+#last '/' by default
+#final path is the 'directory' + '/newfile name'
+
+	finalPath="${compatibleDirectory}/$baseFileName"
+fi
+
+
+#echo "final path is $finalPath"
+
+}  #end destinationCheck
+#####################################################################
+
+#####################################################################
+#checks if the source file has read permission(required)
+permissionCheck ()
+{
+	if [ -r "$sourceFileName" ]; then
+		$PRINTF "FILE READ PERMISSION CHECK..OK\n"
+
+	else
+		$PRINTF "FILE READ PERMISSION CHECK..NOT OK\n"
+		$PRINTF "Exiting Program\n"
+		exit 10
+	fi
+} #end permissionCheck
+#####################################################################
+
+#####################################################################
+#Actual copy operation
+#redirects error to null(if occurs) then change exit status
+copyFile ()
+{
+
+
+	$CP "$sourceFileName" "$finalPath" 2>/dev/null
+	exitStatus=$?
+} #end copyFile
+#####################################################################
+
+#####################################################################
+#checks if the CP cammand(var exitStatus) was done successfull or not
+errorCheck ()
+{
+	if [ "$exitStatus" -eq 0 ]; then
+		$PRINTF "File: \" $sourceFileName \" was copied Successfuly to $finalPath \n "
+	fi
+
+	if [ "$exitStatus" -gt 0 ]; then
+		$PRINTF "Unable to copy File\n"
+		exit 10
+	fi
+} #end errorCheck
+#####################################################################
+
+
+
+#---Main Method
+
+main
+errorCheck

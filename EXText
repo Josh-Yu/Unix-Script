@@ -1,0 +1,239 @@
+#!/bin/sh
+
+#Author: Joshua Yu
+#Student Number: 323 5184
+#Last Modified: 21/05/2012
+
+#contains numerous text funtions as listed in the menu function
+
+#DEBUGGING
+#set -u #Variable checks
+#set -x #Trace
+
+
+PRINTF=/usr/bin/printf
+WC=/usr/bin/wc
+DIRNAME=/usr/bin/dirname
+GREP=/usr/local/bin/grep
+AWK=/usr/local/bin/awk
+DIFF=/usr/local/bin/diff
+
+$PRINTF "Inside EXPERT TEXT"
+#####################################################################
+userInput=
+userChoice=
+#####################################################################
+
+#####################################################################
+menu ()
+{
+$PRINTF "1 -- Count the number of occurences of a specific word in a file\n"
+$PRINTF "2 -- Display line differences between two files\n"
+$PRINTF "3 -- Quit -- Exit the Program\n\n"
+$PRINTF "Please enter an option: "
+
+} #end menu
+#####################################################################
+
+
+#####################################################################
+#reads user input, pass input to checking Functions
+readInput ()
+{
+	read userInput
+	checkMenuInput "$userInput"
+	userChoice=$cleanInput
+}
+#####################################################################
+
+#####################################################################
+#checks if menu userinput not blank
+checkMenuInput ()
+{
+	argumentCount=$#
+	toCheck=
+
+	if [ "$argumentCount" -eq 0 ]; then
+		$PRINTF "Please Type something\n"
+		menu
+		read toCheck
+
+		while [ -z "$toCheck" ] 
+		do
+		$PRINTF "Please Try Again\n"
+		menu
+		read toCheck
+		done
+		cleanInput=$toCheck
+	else
+	cleanInput=$1
+fi
+	
+} #end checkMenuInput
+#####################################################################
+
+#####################################################################
+#checks if the user choice matches 1,2,3, reloop if !
+checkChoice ()
+{
+
+case $userChoice in
+1) countSpecificWord ;;
+2) lineDifference ;;
+3) exit 0 ;;
+*)	$PRINTF "Invalid Choice, Try Again\n"
+	$PRINTF "===================\n\n"
+		menu
+		readInput
+		
+		checkChoice;;	
+esac
+} #end checkChoice
+#####################################################################
+
+#####################################################################
+#function counts occrances of a certain word user specifies inside a
+#file a user specifies
+countSpecificWord ()
+{
+
+$PRINTF "Enter Specific Word to count\n"
+read userInput
+checkUserInput "$userInput"
+
+word=$cleanInput
+$PRINTF "The word to search for is: "$word"\n"
+
+
+
+
+$PRINTF "Enter the File to search:\n"
+read uncheckFile
+
+checkUserInput "$uncheckFile"
+
+fileCheck "$uncheckFile"
+
+
+
+#echo "Reg expression pattern is:  $pattern"
+
+
+
+$AWK -v regEx="$word" 'BEGIN{wordCount=0;}
+{for (column=1; column <=NF; column++)
+if ($column == regEx)wordCount++} 
+END{printf "There are %d occurances of %s \n", wordCount , regEx}' $finalPath
+
+
+
+
+} #end countSpecificWord
+############################
+
+
+#####################################################################
+#checks if  userinput not blank (reloops)
+checkUserInput ()
+{
+	argumentCount=$#
+	toCheck=
+
+	if [ "$argumentCount" -eq 0 ]; then
+		$PRINTF "Please Type something\n"
+	
+		read toCheck
+
+		while [ -z "$toCheck" ] 
+		do
+		$PRINTF "Please Try Again\n"
+		read toCheck
+		done
+		cleanInput=$toCheck
+	else
+	cleanInput=$1
+fi
+	
+} #end checkUserInput
+#####################################################################
+
+#####################################################################
+#checks if the file exists/regular and has read permission for 
+#checks directory permission if it has x
+fileCheck ()
+{
+path=$1
+
+directory=`$DIRNAME "$path"`
+
+echo "$path is"
+
+if [ ! -d "$directory" ]; then
+
+	$PRINTF "ERROR: Directory Not Found\n"
+	$PRINTF "Exiting\n"
+	exit 10
+
+elif [ ! -x "$directory" ]; then
+
+	$PRINTF "ERROR: Directory Require x-Execute Permission\n"
+	$PRINTF "Exiting\n"
+	exit 10
+
+elif [ ! -f "$path" ]; then
+
+	$PRINTF "ERROR: File is not a regular file and doesnt exist\n"
+	$PRINTF "Exiting\n"
+	exit 10
+elif [ ! -r "$path" ]; then
+
+	$PRINTF "ERROR: File Permission Require (r - Read)\n"
+	$PRINTF "Exiting\n"
+	exit 10
+else
+	finalPath=$path
+
+fi
+
+} #end fileCheck
+
+
+#####################################################################
+lineDifference ()
+{
+
+
+
+$PRINTF "Enter file 1\n"
+read input1
+checkUserInput "$input1"
+file1=$cleanInput
+fileCheck "$file1"
+file1="$finalPath"
+
+$PRINTF "Enter file 2\n"
+read intput2
+checkUserInput "$input2"
+file2=$cleanInput
+fileCheck "$file2"
+file2=$finalPath
+
+
+$DIFF -u "$file1" "$file2" 2>/dev/null
+exitStatus=$?
+
+if [ "$exitStatus" -gt 0 ]; then
+
+$PRINTF "Unable to perform line differences/n"
+fi
+
+
+} #end lineDifference
+#####################################################################
+
+#####################################################################
+#-----Main Method
+
+menu
+readInput
+checkChoice

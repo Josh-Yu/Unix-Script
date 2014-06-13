@@ -1,0 +1,247 @@
+#!/bin/sh
+
+#Rename script that uses mv to rename a file. Assume unix philsophy that the user
+# knows what they are doing. If a file name already exists at destination then it will override it 
+
+
+#Author: Joshua Yu
+#Student Number: 323 5184
+
+#Last Modified: 21/05/2012
+
+
+
+PRINTF=/usr/bin/printf
+MV=/usr/bin/mv
+BASENAME=/usr/bin/basename
+DIRNAME=/usr/bin/dirname
+
+$PRINTF '====Currently In Rename Script====\n'
+#####################################################################
+
+originalFileName=
+newFileName=
+
+
+exitStatus=
+
+#uncheckDestination holds text that isnt blank
+uncheckDestination=
+
+#holds (only)directory after it has gone thru permission 
+#and existance checks
+compatibleDirectory=
+#####################################################################
+
+
+#DEBUGGING
+#set -u #Variable checks
+#set -x #Trace
+#####################################################################
+
+#####################################################################
+main ()
+{
+
+$PRINTF "Please input file name to rename: \n"
+read originalFileName
+	
+checkInput "$originalFileName"
+originalFileName=$cleanInput
+
+
+fileExistCheck "$originalFileName"
+
+$PRINTF "Please input new file name: \n"
+read newFileName
+	
+checkInput "$newFileName"
+
+
+uncheckDestination=$cleanInput
+
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+destinationCheck "$uncheckDestination"
+
+rename
+
+errorCheck
+
+} #end of main
+#####################################################################
+
+#####################################################################
+#function to check if userInput is not blank (pass in input)
+#if user input nothing initially, 
+#if will get trigger and reloop until some input is entered
+
+checkInput ()
+{
+
+cleanInput=
+argumentCount=$#
+toCheck=
+
+if [ "$argumentCount" -eq 0 ]; then
+	$PRINTF "Enter a file name:\n"
+	read toCheck
+
+		while [ -z "$toCheck" ] 
+		do
+		$PRINTF "Enter a file name\n"
+		read toCheck
+		done
+	cleanInput=$toCheck
+else
+	cleanInput=$1
+fi
+	
+} #end checkInput
+#####################################################################
+
+#####################################################################
+
+#checks if  source directory has W and X permissions
+#checks if the filename exisits and is a regular file
+fileExistCheck ()
+{
+passedArgument=$1
+
+#strips only the directory and minus the '/' at end
+directory=`$DIRNAME "$passedArgument"`
+if [ ! -x "$directory" ]; then
+	$PRINTF "ERROR: Source Directory Permission (Require x - \
+Execute Permission)\n"
+	$PRINTF "Exiting\n"
+	exit 10
+elif [ ! -w "$directory" ]; then
+	$PRINTF "Error: Source Directory Permission Error \
+(require write)\n"
+	$PRINTF "Exiting\n"
+	exit 10
+elif [ ! -f "$originalFileName" ]; then
+	$PRINTF "File name: \"$originalFileName\" does not exist in the \
+Directory: $directory \n"
+	$PRINTF "Exiting Program\n"	 
+	exit 10
+
+
+fi
+} #end fileExistCheck
+#####################################################################
+
+#####################################################################
+#strips the file prefix out and checks if directory
+#has w permission and is a directory. If yes then
+#final destination is the real destionation
+
+#Also, modifys the final path depending whether user typed 
+#only new file or specify a path
+#
+#strips the new filename and saves it
+
+#MV REQUIRES W and X permissions inorder for it to work
+
+destinationCheck ()
+{
+#argument should be the directory input by user
+	passedArgument=$1
+#^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+#strips only the directory and minus the '/' at end
+	directory=`$DIRNAME "$passedArgument"`
+
+#strips the new file name from directory and saves it
+baseFileName=`$BASENAME "$passedArgument"`
+
+#if not valid directory, goes into loop if not a directory
+if [ ! -d "$directory" ]; then
+	$PRINTF "Error: Not a valid Directory\n"
+	$PRINTF "Exiting\n"
+	exit 10
+
+#passes the directory test previously, so it currently is a directory
+#to get to this part
+elif [ ! -w "$directory" ]; then
+	$PRINTF "Error: Destination Directory Permission Error \
+(require write)\n"
+	$PRINTF "Exiting\n"
+	exit 10
+elif [ ! -x "$directory" ]; then
+	$PRINTF "Error: Destination Directory Permission Error \
+(Require Execute)\n"
+	$PRINTF "Exiting\n"
+	exit 10
+
+#else will exec, doesnt matches any ifs, so its a legit directory
+else
+
+compatibleDirectory=$directory
+
+fi
+
+###
+
+#if user specifys no path, its assumed its the current directory
+#therefore using dirname would result in '.'(current directory)
+#
+
+if [ "$compatibleDirectory" = '.' ]; then
+#final path is the directory + newfile name
+
+	compatibleDirectory='./'
+	finalPath="${compatibleDirectory}$baseFileName"
+	
+else
+
+#adds the '/' for cases where user specifies path, because dirname strips
+#last '/' by default
+#final path is the 'directory' + '/newfile name'
+
+	finalPath="${compatibleDirectory}/$baseFileName"
+fi
+
+
+
+
+}  #end destinationCheck
+
+
+#####################################################################
+#Runs the mv and checks if error occured
+#If error occurs, redirect 2-stderr to /dev/null
+#need to check if the destination directory has the correct permission to move and rename file
+rename ()
+{
+
+#I want to first redirect the error stream to stdinput of /dev/null so it wont show on screen
+
+$MV "$originalFileName" "$finalPath" 2> /dev/null
+exitStatus=$?
+} # end rename
+#####################################################################
+
+#####################################################################
+#checks if the MV  cammand was done successful or not
+errorCheck ()
+{
+if [ "$exitStatus" -eq 0 ]; then
+	$PRINTF "File \" $originalFileName \" was renamed to \"$baseFileName\"\n "
+fi
+
+if [ "$exitStatus" -gt 0 ]; then
+	$PRINTF "Unable to Rename File\n"
+	exit 10
+fi
+
+} #end errorCheck
+#####################################################################
+
+
+#---- Main Method
+main
+
+
+
+
